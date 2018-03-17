@@ -1,0 +1,5 @@
+<ul>
+#for(talk in talks) {
+  <li><a href="/talk/#(talk.id)">#(talk.presenter)</a></li>
+}
+</ul>
