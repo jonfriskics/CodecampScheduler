@@ -1,30 +1,29 @@
 import Routing
 import Vapor
 
-/// Register your application's routes here.
-///
-/// [Learn More →](https://docs.vapor.codes/3.0/getting-started/structure/#routesswift)
 public func routes(_ router: Router) throws {
-    // Basic "Hello, world!" example
     router.get("hello") { req in
         return "Hello, world!"
     }
 
-    // Example of creating a Service and using it.
-    router.get("hash", String.parameter) { req -> String in
-        // Create a BCryptHasher using the Request's Container
-        let hasher = try req.make(BCryptHasher.self)
+    router.get("talk", Int.parameter) { req -> Future<View> in
+        let id = try req.parameter(Int.self)
+        
+        _ = Talk(id: 1, presenter: "Jon Friskics...").create(on: req)
+        _ = Talk(id: 2, presenter: "David Haney...").create(on: req)
+        _ = Talk(id: 3, presenter: "Devan Beitel...").create(on: req)
 
-        // Fetch the String parameter (as described in the route)
-        let string = try req.parameter(String.self)
+        struct TalkContext: Codable {
+            var id: Int?
+            var presenter: String
+        }
 
-        // Return the hashed string!
-        return try hasher.make(string)
+        return Talk.find(id, on: req).flatMap(to: View.self) { talk in
+            guard let talk = talk else {
+                throw Abort(.notFound)
+            }
+            let context = TalkContext(id: talk.id, presenter: talk.presenter)
+            return try req.view().render("talk", context)
+        }
     }
-
-    // Example of configuring a controller
-    let todoController = TodoController()
-    router.get("todos", use: todoController.index)
-    router.post("todos", use: todoController.create)
-    router.delete("todos", Todo.parameter, use: todoController.delete)
 }
